@@ -173,6 +173,23 @@
             font-size: 0.95rem;
         }
 
+        .pin-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        .pin-table th, .pin-table td {
+            border: 1px solid #cbd5e1;
+            padding: 0.6rem;
+            text-align: left;
+        }
+
+        .pin-table th {
+            background-color: #f1f5f9;
+            color: var(--primary-color);
+        }
+
         pre {
             background-color: var(--code-bg);
             color: #fff;
@@ -339,14 +356,49 @@ function handleRequest(e) {
 
         <h2>階段三：樹莓派硬體控制與 Python 實作</h2>
         
-        <div class="step-block">
-            <div class="step-title"><div class="step-number">6</div>硬體線路連接</div>
-            <p>請將你的 DHT11 溫溼度感測器與樹莓派 3 的 GPIO 進行對接：</p>
+        <div class="step-block highlight">
+            <div class="step-title"><div class="step-number">6</div>硬體引腳對照與對接 (重要觀念)</div>
+            <p><span class="important">⚠️ 請注意：</span> 市面上的 3 針腳 DHT11 模組廠商眾多，各廠牌的引腳排列順序（VCC、GND、Data）皆不相同。<strong>在接線前，務必先肉眼觀察自己手上的 DHT11 板子上的文字標示！</strong></p>
+            
+            <p style="margin-top: 0.5rem; font-weight: bold;">🔍 第一步：確認你的 DHT11 (3-Pin) 引腳標示</p>
             <ul>
-                <li>感測器 <strong>VCC</strong> ── 接樹莓派 <strong>Pin 1 (3.3V)</strong></li>
-                <li>感測器 <strong>GND</strong> ── 接樹莓派 <strong>Pin 6 (接地)</strong></li>
-                <li>感測器 <strong>Data (資料腳)</strong> ── 接樹莓派 <strong>GPIO 4 (實體板第 7 針腳)</strong></li>
+                <li><strong>電源正極標示：</strong> 通常寫著 <code class="code-inline">VCC</code>、<code class="code-inline">+</code> 或 <code class="code-inline">5V</code></li>
+                <li><strong>電源負極標示：</strong> 通常寫著 <code class="code-inline">GND</code> 或 <code class="code-inline">-</code></li>
+                <li><strong>數據訊號標示：</strong> 通常寫著 <code class="code-inline">DATA</code>、<code class="code-inline">DAT</code>、<code class="code-inline">S</code> 或 <code class="code-inline">OUT</code></li>
             </ul>
+
+            <p style="margin-top: 0.8rem; font-weight: bold;">🔌 第二步：依照標示對照，連線至樹莓派</p>
+            <p>認清手上的引腳後，請在樹莓派<strong>關機狀態下</strong>，透過杜邦線一對一連接至樹莓派對應的腳位：</p>
+            
+            <table class="pin-table">
+                <thead>
+                    <tr>
+                        <th>DHT11 模組上的標示</th>
+                        <th>連接到樹莓派的腳位名稱</th>
+                        <th>樹莓派實體排針編號 (Physical Pin)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>VCC / +</strong> (電源正極)</td>
+                        <td>3.3V 電源</td>
+                        <td>實體第 1 針腳 (Pin 1)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GND / -</strong> (電源負極)</td>
+                        <td>GND (Ground 地線)</td>
+                        <td>實體第 6 針腳 (Pin 6)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DATA / S / OUT</strong> (數據腳)</td>
+                        <td>GPIO 4</td>
+                        <td>實體第 7 針腳 (Pin 7)</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="tip">
+                💡 <strong>小提醒：</strong>本教學程式碼預設數據腳接在 <strong>GPIO 4</strong>。如果你將數據腳改接在其他 GPIO 針腳，請務必在下方步驟 8 的 Python 程式碼中，同步修改 <code class="code-inline">board.D4</code> 的設定。
+            </div>
         </div>
 
         <div class="step-block highlight">
@@ -373,7 +425,7 @@ GAS_URL = "請在此處貼上你的_Google_GAS_網址_exec"
 LINE_ACCESS_TOKEN = "請在此處貼上你的_LINE_Channel_Access_Token"
 TARGET_USER_ID = "請在此處貼上你的_LINE_Your_user_ID"
 
-# (3) DHT11 感測器接腳設定 (資料線接 GPIO 4 故寫 board.D4)
+# (3) DHT11 感測器接腳設定 (若數據線非接在 GPIO 4，請將 D4 修改為對應的 GPIO 號碼)
 dhtDevice = adafruit_dht.DHT11(board.D4)
 
 # ==================== 2. 功能函式定義 ====================
