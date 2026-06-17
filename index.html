@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>樹莓派 3 ✕ Google 試算表 ✕ LINE Bot 雙向同步建置指南</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #27ae60;
+            --accent-color: #2980b9;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --code-bg: #2d3748;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Microsoft JhengHei", sans-serif;
+            line-height: 1.7;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 0;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-color), #34495e);
+            color: white;
+            text-align: center;
+            padding: 2.5rem 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .intro-card {
+            background-color: #e8f4fd;
+            border-left: 5px solid var(--accent-color);
+            padding: 1.2rem;
+            border-radius: 4px;
+            margin-bottom: 2rem;
+        }
+
+        .diagram-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            margin-bottom: 2.5rem;
+            text-align: center;
+        }
+
+        .diagram-container h3 {
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        .diagram {
+            font-family: monospace;
+            white-space: pre;
+            background-color: #1a202c;
+            color: #edf2f7;
+            padding: 1.2rem;
+            border-radius: 6px;
+            text-align: left;
+            display: inline-block;
+            overflow-x: auto;
+            max-width: 100%;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        h2 {
+            color: var(--primary-color);
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+            margin-top: 2.5rem;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+        }
+
+        h2::before {
+            content: "📌";
+            margin-right: 0.5rem;
+            font-size: 1.4rem;
+        }
+
+        .step-block {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border-top: 4px solid #cbd5e1;
+            transition: transform 0.2s;
+        }
+
+        .step-block:hover {
+            transform: translateY(-2px);
+        }
+
+        .step-block.highlight {
+            border-top-color: var(--secondary-color);
+        }
+
+        .step-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .step-number {
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            margin-right: 0.6rem;
+        }
+
+        .step-block.highlight .step-number {
+            background-color: var(--secondary-color);
+        }
+
+        ul, ol {
+            padding-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        .important {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .tip {
+            background-color: #f0fff4;
+            border-left: 4px solid #38a169;
+            padding: 0.8rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-size: 0.95rem;
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            color: #fff;
+            padding: 1.2rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        code {
+            font-family: Consolas, Monaco, 'Andale Mono', monospace;
+        }
+
+        .code-inline {
+            background-color: #edf2f7;
+            color: #2d3748;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-family: monospace;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem 1rem;
+            background-color: var(--primary-color);
+            color: white;
+            margin-top: 4rem;
+            font-size: 0.9rem;
+        }
+
+        a {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>樹莓派 3 物聯網專案實作教學</h1>
+        <p>DHT11 溫溼度數據收集：同步上傳 Google 試算表 & LINE Bot 即時推播 (GAS 方案 A)</p>
+    </header>
+
+    <div class="container">
+        
+        <div class="intro-card">
+            <strong>💡 架構導讀：</strong>
+            本教學採用最乾淨獨立的「方案 A」。由樹莓派作為本地主控核心，讀取 DHT11 後，同時分頭呼叫 Google API 進行歷史資料存檔，並呼叫 LINE API 進行即時警報通知。此架構具備低耦合度、方便在終端機直接 Debug，且完全不佔用 Google 雲端的 Fetch 每日配額。
+        </div>
+
+        <div class="diagram-container">
+            <h3>📊 專案數據流向方塊圖</h3>
+            <div class="diagram">
+                        ┌──────────────────┐
+                        │  樹莓派 3 主機   │
+                        │  (Raspberry Pi)  │
+                        └────────┬─────────┘
+                                 │
+                ┌────────────────┴────────────────┐
+                ▼ (讀取溫溼度)                      ▼ (定時分發數據)
+       ┌─────────────────┐               ┌────────────────────────────────┐
+       │ DHT11 感測器     │               │  dht11_to_gsheet.py (Python)   │
+       └─────────────────┘               └────────┬──────────────┬────────┘
+                                                  │              │
+                        ┌─────────────────────────┘              └────────────────────────┐
+                        ▼ HTTP GET (帶參數)                                                ▼ HTTP POST (JSON Payload)
+         ┌──────────────────────────────────────────────┐                         ┌──────────────────────────────────────┐
+         │          Google 雲端伺服器                    │                         │            LINE 官方伺服器           │
+         ├──────────────────────────────────────────────┤                         ├──────────────────────────────────────┤
+         │ 1. 網頁應用程式 URL (GAS Web App)             │                         │ 1. Messaging API 控制台              │
+         │ 2. 負責解析 e.parameter                      │                         │ 2. 驗證 Authorization (Token)        │
+         │ 3. 執行 sheet.appendRow()                    │                         │ 3. 識別對象 to: USER_ID              │
+         └──────────────────────┬───────────────────────┘                         └──────────────────┬───────────────────┘
+                                ▼                                                                    ▼
+                 ┌─────────────────────────────┐                                      ┌──────────────────────────────┐
+                 │   Google Sheets (雲端試算表) │                                      │   手機 LINE App (推播通知)   │
+                 │   [紀錄時間、溫度、濕度歷史]  │                                      │   [接收精美即時溫溼度卡片]    │
+                 └─────────────────────────────┘                                      └──────────────────────────────┘</div>
+        </div>
+
+        <h2>階段一：Google 雲端後台設定 (GAS 網址生成)</h2>
+        
+        <div class="step-block">
+            <div class="step-title"><div class="step-number">1</div>建立雲端試算表</div>
+            <p>打開你的 Google 雲端硬碟，新增一張全新的「Google 試算表」。這張試算表將用來永久儲存樹莓派傳上來的歷史數據。</p>
+        </div>
+
+        <div class="step-block">
+            <div class="step-title"><div class="step-number">2</div>編寫 Apps Script 腳本</div>
+            <p>點擊試算表網頁上方選單的 <strong>「擴充功能」 &gt; 「Apps Script」</strong>。將裡面的預設程式碼全部清空，並貼上以下負責資料接收的純淨版程式碼：</p>
+            <pre><code>function doGet(e) {
+  return handleRequest(e);
+}
+
+function doPost(e) {
+  return handleRequest(e);
+}
+
+function handleRequest(e) {
+  var temperature = e.parameter.temperature;
+  var humidity = e.parameter.humidity;
+  
+  // 自動綁定目前腳本所在的試算表
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheets()[0];
+  var now = Utilities.formatDate(new Date(), "Asia/Taipei", "yyyy-MM-dd HH:mm:ss");
+  
+  if (temperature !== undefined && humidity !== undefined) {
+    // 依序寫入 A欄(時間), B欄(溫度), C欄(濕度)
+    sheet.appendRow([now, temperature, humidity]);
+    return ContentService.createTextOutput("Success: Data written to Sheet.");
+  } else {
+    return ContentService.createTextOutput("Error: Missing parameters.");
+  }
+}</code></pre>
+            <p>貼上後，點擊上方的 <strong>「儲存 (磁碟片圖示 💾)」</strong>。</p>
+        </div>
+
+        <div class="step-block highlight">
+            <div class="step-title"><div class="step-number">3</div>部署為網頁應用程式</div>
+            <p>這是讓外網設備（樹莓派）能夠順利傳入資料的關鍵設定：</p>
+            <ol>
+                <li>點擊右上角的 <strong>「部署」 &gt; 「新部署」</strong>。</li>
+                <li>點選左側「選取類型」旁的齒輪圖示，選擇 <strong>「網頁應用程式」</strong>。</li>
+                <li><strong>專案主管：</strong>維持你的 Google 帳號。</li>
+                <li><span class="important">誰可以存取：務必切換為「所有人 (Anyone)」</span>。</li>
+                <li>點擊「部署」。首次部署會彈出授權視窗，請點擊「核對權限」 &gt; 選擇你的帳號 &gt; 點擊底部的「進階」 &gt; 點擊「前往未命名專案(不安全)」 &gt; 最後點擊「允許」。</li>
+            </ol>
+            <div class="tip">
+                👉 部署成功後，請完整複製畫面上的<strong>「網頁應用程式 URL」</strong>（網址結尾通常是 <code class="code-inline">/exec</code>），妥善備用。
+            </div>
+        </div>
+
+
+        <h2>階段二：LINE Developer 開發者憑證獲取</h2>
+        
+        <div class="step-block">
+            <div class="step-title"><div class="step-number">4</div>建立 LINE 官方帳號與啟用 API</div>
+            <ol>
+                <li>前往 LINE Business 後台建立一個免費的官方帳號（例如命名為「樹莓派即時回報系統」）。</li>
+                <li>進入管理主頁後，點擊網頁右上方 <strong>「設定 (齒輪⚙️)」 &gt; 左側選單「Messaging API」</strong>。</li>
+                <li>點擊 <strong>「啟用 Messaging API」</strong>，服務提供者 (Provider) 填入或選擇一個既有專案名稱。</li>
+            </ol>
+        </div>
+
+        <div class="step-block highlight">
+            <div class="step-title"><div class="step-number">5</div>撈取 LINE 關鍵金鑰字串</div>
+            <p>登入 <a href="https://developers.line.biz/console/" target="_blank">LINE Developers Console</a> 控制台，進入你對應的 Bot 設定區：</p>
+            <ul>
+                <li><strong>獲取 User ID：</strong>在 <code class="code-inline">Basic settings</code> 頁籤最下方，複製 <strong>Your user ID</strong>（格式為 <code class="code-inline">Uxxxxxxxx...</code>）。</li>
+                <li><strong>獲取 Access Token：</strong>在 <code class="code-inline">Messaging API</code> 頁籤最下方，點擊 **Channel access token** 欄位旁的 <strong>「Issue」</strong>，複製整串複雜字串。</li>
+                <li><strong>加入好友：</strong>使用手機掃描該頁面的 QR Code，將這個官方帳號<strong>加為好友</strong>，否則手機會收不到推播。</li>
+            </ul>
+        </div>
+
+
+        <h2>階段三：樹莓派硬體控制與 Python 實作</h2>
+        
+        <div class="step-block">
+            <div class="step-title"><div class="step-number">6</div>硬體線路連接</div>
+            <p>請將你的 DHT11 溫溼度感測器與樹莓派 3 的 GPIO 進行對接：</p>
+            <ul>
+                <li>感測器 <strong>VCC</strong> ── 接樹莓派 <strong>Pin 1 (3.3V)</strong></li>
+                <li>感測器 <strong>GND</strong> ── 接樹莓派 <strong>Pin 6 (接地)</strong></li>
+                <li>感測器 <strong>Data (資料腳)</strong> ── 接樹莓派 <strong>GPIO 4 (實體板第 7 針腳)</strong></li>
+            </ul>
+        </div>
+
+        <div class="step-block highlight">
+            <div class="step-title"><div class="step-number">7</div>修復環境核心 (解決 Unknown platform 錯誤)</div>
+            <p>由於新版作業系統（如 Bookworm 架構）停止支援舊型 Adafruit 庫，請在樹莓派終端機執行現代化套件更新：</p>
+            <pre><code>sudo apt update
+sudo apt install -y gpiod libgpiod-dev
+pip3 install adafruit-circuitpython-dht --break-system-packages</code></pre>
+        </div>
+
+        <div class="step-block">
+            <div class="step-title"><div class="step-number">8</div>部署 Python 雙向同步程式</div>
+            <p>在樹莓派終端機輸入 <code class="code-inline">nano dht11_to_gsheet.py</code> 建立腳本，並貼入下方完整整合代碼：</p>
+            <pre><code>import time
+import requests
+import board
+import adafruit_dht
+
+# ==================== 1. 硬體與網路參數設定 ====================
+# (1) 填入你在階段一複製的 Google Apps Script Web App 網址
+GAS_URL = "請在此處貼上你的_Google_GAS_網址_exec"
+
+# (2) 填入你在階段二複製的 LINE 憑證資訊
+LINE_ACCESS_TOKEN = "請在此處貼上你的_LINE_Channel_Access_Token"
+TARGET_USER_ID = "請在此處貼上你的_LINE_Your_user_ID"
+
+# (3) DHT11 感測器接腳設定 (資料線接 GPIO 4 故寫 board.D4)
+dhtDevice = adafruit_dht.DHT11(board.D4)
+
+# ==================== 2. 功能函式定義 ====================
+
+def send_to_google_sheet(temp, humi):
+    """將溫溼度數據傳送到 Google 試算表存檔"""
+    payload = {"temperature": temp, "humidity": humi}
+    try:
+        response = requests.get(GAS_URL, params=payload, timeout=10)
+        if response.status_code == 200:
+            print(f"【Google Sheet】同步成功！回應: {response.text}")
+        else:
+            print(f"【Google Sheet】發送失敗，狀態碼: {response.status_code}")
+    except Exception as e:
+        print(f"【Google Sheet】連線發生錯誤: {e}")
+
+def send_to_line_bot(temp, humi):
+    """將溫溼度數據直接發送到 LINE Bot 推播通知"""
+    url = "https://api.line.me/v2/bot/message/push"
+    current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    
+    message_text = f"\n🌡️ 樹莓派溫溼度即時回報\n-------------------\n⏰ 時間：{current_time}\n°C 溫度：{temp} °C\n💧 濕度：{humi} %"
+    
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {LINE_ACCESS_TOKEN}"
+    }
+    payload = {
+        "to": TARGET_USER_ID,
+        "messages": [{"type": "text", "text": message_text}]
+    }
+    try:
+        response = requests.post(url, json=payload, headers=headers, timeout=10)
+        if response.status_code == 200:
+            print("【LINE Bot】訊息推送成功！")
+        else:
+            print(f"【LINE Bot】發送失敗，狀態碼: {response.status_code}, 回應: {response.text}")
+    except Exception as e:
+        print(f"【LINE Bot】連線發生錯誤: {e}")
+
+# ==================== 3. 主程式執行迴圈 ====================
+if __name__ == "__main__":
+    print("樹莓派 DHT11 獨立雙向同步系統啟動...")
+    try:
+        while True:
+            try:
+                temperature = dhtDevice.temperature
+                humidity = dhtDevice.humidity
+                
+                if humidity is not None and temperature is not None:
+                    temp_fixed = round(temperature, 1)
+                    humi_fixed = round(humidity, 1)
+                    
+                    print(f"\n[偵測到新數據] 溫度: {temp_fixed}°C | 濕度: {humi_fixed}%")
+                    
+                    send_to_google_sheet(temp_fixed, humi_fixed)
+                    send_to_line_bot(temp_fixed, humi_fixed)
+                
+                # 每 10 分鐘 (600秒) 自動讀取發送一次
+                time.sleep(600)
+
+            except RuntimeError as error:
+                # DHT11 對時序極度敏感，偶發讀取失敗為硬體物理特性，等待2秒重試即可
+                print(f"讀取中發生微小錯誤 (重試中): {error.args[0]}")
+                time.sleep(2.0)
+                continue
+            except Exception as error:
+                dhtDevice.exit()
+                raise error
+    except KeyboardInterrupt:
+        dhtDevice.exit()
+        print("\n程式已由使用者手動終止。")</code></pre>
+            <p>替換參數完畢後，按 <code class="code-inline">Ctrl + O</code> 儲存，再按 <code class="code-inline">Ctrl + X</code> 離開納諾編輯器。</p>
+        </div>
+
+        <div class="step-block highlight">
+            <div class="step-title"><div class="step-number">9</div>專案啟動與驗證</div>
+            <p>在樹莓派終端機執行下方指令：</p>
+            <pre><code>python3 dht11_to_gsheet.py</code></pre>
+            <p><strong>💡 成果驗證：</strong>此時終端機會定時刷新成功狀態。去檢查你的 Google 試算表是不是確實填入了資料，手機 LINE 也同步接收到了推播卡片，大功告成！</p>
+        </div>
+
+    </div>
+
+    <footer>
+        <p>物聯網開發推廣教材 ✕ 歡迎轉載分享 ✕ 2026</p>
+    </footer>
+
+</body>
+</html>
