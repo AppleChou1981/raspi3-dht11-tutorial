@@ -9,6 +9,7 @@
             --primary-color: #2c3e50;
             --blue-accent: #2980b9;
             --danger-color: #c0392b;
+            --line-color: #06C755;
             --bg-color: #f4f6f9;
             --card-bg: #ffffff;
             --code-bg: #1e293b;
@@ -33,12 +34,15 @@
 
         .container { max-width: 1000px; margin: 2rem auto; padding: 0 1.5rem; }
         
-        /* 導覽切換按鈕區 */
         .nav-toggle-box {
             text-align: center;
             margin: 1.5rem 0 2.5rem 0;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
         }
-        .btn-toggle {
+        .btn-toggle-b {
             background-color: #e67e22;
             color: white;
             padding: 12px 24px;
@@ -49,10 +53,20 @@
             box-shadow: 0 4px 15px rgba(230, 126, 34, 0.3);
             transition: transform 0.2s, background-color 0.2s;
         }
-        .btn-toggle:hover {
-            background-color: #d35400;
-            transform: translateY(-2px);
+        .btn-toggle-b:hover { background-color: #d35400; transform: translateY(-2px); }
+        
+        .btn-line {
+            background-color: var(--line-color);
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            display: inline-block;
+            box-shadow: 0 4px 15px rgba(6, 199, 85, 0.3);
+            transition: transform 0.2s, background-color 0.2s;
         }
+        .btn-line:hover { background-color: #05b04b; transform: translateY(-2px); }
 
         .warning-card {
             background-color: #fadbd8;
@@ -102,7 +116,25 @@
             margin-right: 0.6rem;
         }
 
-        /* 40-Pin 實體排針模擬圖表 */
+        .url-box {
+            background-color: #f1f5f9;
+            border: 1px dashed #cbd5e1;
+            padding: 0.8rem;
+            font-family: monospace;
+            font-size: 0.9rem;
+            word-break: break-all;
+            border-radius: 4px;
+            margin: 0.8rem 0;
+        }
+        .url-highlight {
+            background-color: #fef9e7;
+            border: 1px solid #f4d03f;
+            color: #b7950b;
+            padding: 0.1rem 0.4rem;
+            font-weight: bold;
+            border-radius: 3px;
+        }
+
         .gpio-container { overflow-x: auto; margin: 1.5rem 0; }
         .gpio-table { width: 100%; min-width: 600px; border-collapse: collapse; font-size: 0.85rem; text-align: center; }
         .gpio-table th { background-color: var(--primary-color); color: white; padding: 0.5rem; }
@@ -125,6 +157,7 @@
         .code-inline { background-color: #e2e8f0; color: #1e293b; padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.9rem; font-family: monospace; }
         
         footer { text-align: center; padding: 2rem 1rem; background-color: var(--primary-color); color: white; margin-top: 4rem; font-size: 0.9rem; }
+        footer p { margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -137,22 +170,37 @@
     <div class="container">
         
         <div class="nav-toggle-box">
-            <a href="plan-b.html" class="btn-toggle">👉 切換至【方案 B：GCP API 本地中繼方案】教學</a>
+            <a href="plan-b.html" class="btn-toggle-b">👉 切換至【方案 B：GCP API 本地中繼與直連 LINE Bot】</a>
+            <a href="https://line.me/R/ti/p/@你的LINEBotID" target="_blank" class="btn-line">💬 測試與檢視我的 LINE Bot 官方帳號</a>
         </div>
 
         <div class="warning-card">
-            ⚠️ 重要提醒：請先插妥杜邦線並確認所有接線正確後再行送電！若是接線錯誤，會導致 DHT11 及 Raspberry Pi 晶片燒毀！
+            ⚠️ 重要提醒：請先插妥杜邦線並確認所有接線正確後再行送電！若是電源（VCC）與接地（GND）接反，會導致 DHT11 及 Raspberry Pi 晶片過熱燒毀！
         </div>
 
         <div class="intro-card">
-            <strong>💡 架隔導讀（方案 A）：</strong>
-            本教學採用「方案 A」。由樹莓派定時讀取 DHT11 後，轉化為 HTTP POST 請求發送給 <strong>Google Apps Script (GAS)</strong> 網頁應用程式。GAS 收到後扮演中控角色，負責寫入試算表，並同時呼叫 LINE Notify 或 Messaging API 傳送推播通知。此方案的優點是樹莓派程式碼極為簡潔。
+            <strong>💡 架構導讀（方案 A）：</strong>
+            本教學採用「方案 A」。由樹莓派定時讀取 DHT11 後，轉化為 HTTP POST 請求並帶入指定的試算表 ID 發送給 <strong>Google Apps Script (GAS)</strong>。GAS 負責開啟對應試算表並寫入，此方案的樹莓派程式碼極為簡潔。
         </div>
 
         <div class="step-block">
-            <div class="step-title"><div class="step-number">1</div>硬體腳位對照表 (Raspberry Pi 3 40-Pin 排針)</div>
-            <p>請對照下表進行接線，並確認 DHT11 模組上的字樣標示（務必以模組排針上的實際文字標記為準）：</p>
-            
+            <div class="step-title"><div class="step-number">1</div>如何檢索並提取 Google 試算表 ID？</div>
+            <p>打開你的 Google 雲端試算表，觀察瀏覽器上方網址列，結構如下圖。請<strong>僅複製</strong>兩條斜線中間的那一長串英數隨機亂碼：</p>
+            <div class="url-box">
+                https://docs.google.com/spreadsheets/d/<span class="url-highlight">【 只要複製這整串隨機亂碼，這就是試算表 ID 】</span>/edit#gid=0
+            </div>
+            <p>💡 <em>註：這串 ID 稍後必須貼進 Python 程式碼中的 <code class="code-inline">SPREADSHEET_ID</code> 欄位。</em></p>
+        </div>
+
+        <div class="step-block">
+            <div class="step-title"><div class="step-number">2</div>硬體腳位與型號提醒（三針腳 vs 四針腳）</div>
+            <p><strong style="color: #e74c3c;">⚠️ 型號與電阻關鍵確認：</strong></p>
+            <ul>
+                <li><strong>3 支腳位模組（市售常見，如 Keyes 藍色小板）：</strong> 此型號<strong>已在電路板上內建 4.7kΩ 或 10kΩ 上拉電阻</strong>。不需外接電阻，直接用杜邦線連接樹莓派即可。</li>
+                <li><strong>4 支腳位元件（純藍色塑料外殼裸件）：</strong> 第 3 腳為空腳。此型號<strong>內部沒有電阻</strong>，接線時必須在 VCC（第1腳）與 DATA（第2腳）之間<strong>手動並聯一個 4.7kΩ ~ 10kΩ 的電阻</strong>作為上拉電阻，否則樹莓派會因訊號浮動而讀取不到數據（Unknown platform 錯誤）。</li>
+            </ul>
+
+            <p style="margin-top: 1rem;"><strong>實體 40-Pin 排針接線對照表（樹莓派 3）：</strong></p>
             <div class="gpio-container">
                 <table class="gpio-table">
                     <thead>
@@ -165,7 +213,7 @@
                     </thead>
                     <tbody>
                         <tr class="pin-vcc">
-                            <td>接 DHT11 的 VCC (+) ── [3.3V 電源]</td>
+                            <td>接 DHT11 的 VCC（標示 + 或 VCC） ── [3.3V 電源]</td>
                             <td class="pin-num">1</td>
                             <td class="pin-num">2</td>
                             <td>5V 電源</td>
@@ -180,10 +228,10 @@
                             <td>GPIO 3 (SCL)</td>
                             <td class="pin-num">5</td>
                             <td class="pin-num">6</td>
-                            <td class="pin-gnd">接 DHT11 的 GND (-) ── [Ground 地線]</td>
+                            <td class="pin-gnd">接 DHT11 的 GND（標示 - 或 GND） ── [Ground 地線]</td>
                         </tr>
                         <tr class="pin-gpio4">
-                            <td>接 DHT11 的 DAT (Data/Out/S) ── [GPIO 4]</td>
+                            <td>接 DHT11 的 DATA（標示 S、OUT 或 DAT） ── [GPIO 4]</td>
                             <td class="pin-num">7</td>
                             <td class="pin-num">8</td>
                             <td>GPIO 14 (TXD)</td>
@@ -192,10 +240,7 @@
                             <td>Ground (接地)</td>
                             <td class="pin-num">9</td>
                             <td class="pin-num">10</td>
-                            <td>GPIO 15 (RXD)</td>
-                        </tr>
-                        <tr>
-                            <td colspan="4" style="background:#f1f5f9; color:#64748b; font-size:0.75rem; padding:0.2rem;">(以下細節省略，上方已涵蓋本次實驗所需全部腳位)</td>
+                            <td>GPIO 15 (TXD)</td>
                         </tr>
                     </tbody>
                 </table>
@@ -203,39 +248,38 @@
         </div>
 
         <div class="step-block">
-            <div class="step-title"><div class="step-number">2</div>雲端後台：Google Apps Script 指令碼</div>
-            <p>請在雲端硬碟建立 GAS 指令碼，並部署為「網頁應用程式（所有人皆可存取）」：</p>
+            <div class="step-title"><div class="step-number">3</div>雲端後台：Google Apps Script 接收指令碼</div>
             <pre><code>function doPost(e) {
   var params = JSON.parse(e.postData.contents);
+  var targetId = params.spreadsheet_id; // 接收來自樹莓派的試算表ID
   var temp = params.temperature;
   var humi = params.humidity;
   
-  // 1. 寫入試算表
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  sheet.appendRow([new Date(), temp, humi]);
+  // 根據傳入的 ID 開啟指定的試算表
+  var ss = SpreadsheetApp.openById(targetId);
+  var sheet = ss.getSheets()[0];
+  var now = Utilities.formatDate(new Date(), "Asia/Taipei", "yyyy-MM-dd HH:mm:ss");
   
-  // 2. 同步發送 LINE 訊息 (此處以 LINE Notify 為例，亦可改寫為 Messaging API)
-  // sendLineNotification(temp, humi); 
-  
-  return ContentService.createTextOutput("Data logged and notified successfully (Plan A)");
+  sheet.appendRow([now, temp, humi]);
+  return ContentService.createTextOutput("Success: Logged to " + targetId);
 }</code></pre>
         </div>
 
         <div class="step-block">
-            <div class="step-title"><div class="step-number">3</div>樹莓派用戶端：Python 傳送程式碼</div>
-            <p>在樹莓派中建立 <code class="code-inline">dht11_gas_client.py</code>，主程式會進入無窮迴圈，定時將數據傳送至雲端：</p>
+            <div class="step-title"><div class="step-number">4</div>樹莓派用戶端：Python 傳送程式碼</div>
             <pre><code>import time
 import requests
 import board
 import adafruit_dht
 
-# 📢 貼上你的 GAS 網頁應用程式部署網址 (Web App URL)
+# 📢 貼上你的相關參數
 GAS_WEBAPP_URL = "https://script.google.com/macros/s/XXXXX/exec"
+SPREADSHEET_ID = "貼上你檢索到的Google試算表ID亂碼"
 
-# 預設連接到 GPIO 4 (即實體第 7 針腳)
+# 連接至實體第 7 針腳 (GPIO 4)
 dhtDevice = adafruit_dht.DHT11(board.D4)
 
-print("樹莓派 方案 A 系統啟動，每 10 分鐘自動讀取並傳送至 GAS...")
+print("樹莓派 方案 A 系統啟動...")
 
 try:
     while True:
@@ -245,30 +289,29 @@ try:
             
             if humidity is not None and temperature is not None:
                 payload = {
+                    "spreadsheet_id": SPREADSHEET_ID,
                     "temperature": round(temperature, 1), 
                     "humidity": round(humidity, 1)
                 }
-                # 將溫溼度資料透過 HTTP POST 送往雲端中控 GAS
                 res = requests.post(GAS_WEBAPP_URL, json=payload, timeout=10)
-                print(f"【方案 A】數據上傳成功！GAS 回應: {res.text}")
+                print(f"【方案 A】上傳成功！回應: {res.text}")
                 
-            time.sleep(600)  # 每 10 分鐘 (600秒) 自動量測傳送一次
+            time.sleep(600)  # 每 10 分鐘自動傳送一次
         except RuntimeError as error:
-            # DHT11 讀取偶爾會有誤差，遇錯時等待 2 秒重新嘗試
             time.sleep(2.0)
             continue
         except Exception as error:
             dhtDevice.exit()
             raise error
 except KeyboardInterrupt:
-    dhtDevice.exit()
-    print("\n程式已手動終止。")</code></pre>
+    dhtDevice.exit()</code></pre>
         </div>
 
     </div>
 
     <footer>
         <p>資通訊物聯網開發教材 ✕ 方案 A GAS 快速部署 ✕ 2026</p>
+        <p><a href="https://line.me/R/ti/p/@你的LINEBotID" target="_blank" style="color:#06C755; text-decoration:none; font-weight:bold;">🟢 點擊此處加入專案 LINE 官方帳號 Bot 🔔</a></p>
     </footer>
 
 </body>
