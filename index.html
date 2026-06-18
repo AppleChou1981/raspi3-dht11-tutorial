@@ -141,11 +141,11 @@
         </div>
 
         <div class="warning-card">
-            ⚠️ 老師的嚴正警告：請先插妥杜邦線並確認所有接線正確後再行送電！若是接線錯誤，會導致 DHT11 及 Raspberry Pi 晶片燒毀！
+            ⚠️ 重要提醒：請先插妥杜邦線並確認所有接線正確後再行送電！若是接線錯誤，會導致 DHT11 及 Raspberry Pi 晶片燒毀！
         </div>
 
         <div class="intro-card">
-            <strong>💡 架構導讀（方案 A）：</strong>
+            <strong>💡 架隔導讀（方案 A）：</strong>
             本教學採用「方案 A」。由樹莓派定時讀取 DHT11 後，轉化為 HTTP POST 請求發送給 <strong>Google Apps Script (GAS)</strong> 網頁應用程式。GAS 收到後扮演中控角色，負責寫入試算表，並同時呼叫 LINE Notify 或 Messaging API 傳送推播通知。此方案的優點是樹莓派程式碼極為簡潔。
         </div>
 
@@ -210,39 +210,59 @@
   var temp = params.temperature;
   var humi = params.humidity;
   
-  // 寫入試算表邏輯
+  // 1. 寫入試算表
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   sheet.appendRow([new Date(), temp, humi]);
   
-  return ContentService.createTextOutput("Data logged successfully (Plan A)");
+  // 2. 同步發送 LINE 訊息 (此處以 LINE Notify 為例，亦可改寫為 Messaging API)
+  // sendLineNotification(temp, humi); 
+  
+  return ContentService.createTextOutput("Data logged and notified successfully (Plan A)");
 }</code></pre>
         </div>
 
         <div class="step-block">
             <div class="step-title"><div class="step-number">3</div>樹莓派用戶端：Python 傳送程式碼</div>
-            <p>在樹莓派中建立 <code class="code-inline">dht11_gas_client.py</code>，並填入發送邏輯：</p>
+            <p>在樹莓派中建立 <code class="code-inline">dht11_gas_client.py</code>，主程式會進入無窮迴圈，定時將數據傳送至雲端：</p>
             <pre><code>import time
 import requests
 import board
 import adafruit_dht
 
-# 貼上你的 GAS 網頁應用程式部署網址 (Web App URL)
+# 📢 貼上你的 GAS 網頁應用程式部署網址 (Web App URL)
 GAS_WEBAPP_URL = "https://script.google.com/macros/s/XXXXX/exec"
 
+# 預設連接到 GPIO 4 (即實體第 7 針腳)
 dhtDevice = adafruit_dht.DHT11(board.D4)
 
-while True:
-    try:
-        temperature = dhtDevice.temperature
-        humidity = dhtDevice.humidity
-        if humidity is not None and temperature is not None:
-            payload = {"temperature": temperature, "humidity": humidity}
-            res = requests.post(GAS_WEBAPP_URL, json=payload, timeout=10)
-            print(f"數據成功上傳 GAS! 回應: {res.text}")
-        time.sleep(600)
-    except RuntimeError:
-        time.sleep(2.0)
-        continue</code></pre>
+print("樹莓派 方案 A 系統啟動，每 10 分鐘自動讀取並傳送至 GAS...")
+
+try:
+    while True:
+        try:
+            temperature = dhtDevice.temperature
+            humidity = dhtDevice.humidity
+            
+            if humidity is not None and temperature is not None:
+                payload = {
+                    "temperature": round(temperature, 1), 
+                    "humidity": round(humidity, 1)
+                }
+                # 將溫溼度資料透過 HTTP POST 送往雲端中控 GAS
+                res = requests.post(GAS_WEBAPP_URL, json=payload, timeout=10)
+                print(f"【方案 A】數據上傳成功！GAS 回應: {res.text}")
+                
+            time.sleep(600)  # 每 10 分鐘 (600秒) 自動量測傳送一次
+        except RuntimeError as error:
+            # DHT11 讀取偶爾會有誤差，遇錯時等待 2 秒重新嘗試
+            time.sleep(2.0)
+            continue
+        except Exception as error:
+            dhtDevice.exit()
+            raise error
+except KeyboardInterrupt:
+    dhtDevice.exit()
+    print("\n程式已手動終止。")</code></pre>
         </div>
 
     </div>
