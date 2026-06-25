@@ -9,6 +9,7 @@
             --primary-color: #2c3e50;
             --blue-accent: #2980b9;
             --danger-color: #c0392b;
+            --line-color: #06C755;
             --bg-color: #f4f6f9;
             --card-bg: #ffffff;
             --code-bg: #1e293b;
@@ -36,10 +37,6 @@
         .nav-toggle-box {
             text-align: center;
             margin: 1.5rem 0 2.5rem 0;
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            flex-wrap: wrap;
         }
         .btn-toggle-b {
             background-color: #e67e22;
@@ -81,26 +78,23 @@
         }
 
         .step-title {
-            font-size: 1.2rem;
+            font-size: 1.25rem;
             font-weight: bold;
             color: var(--primary-color);
-            margin-bottom: 0.8rem;
-            display: flex;
-            align-items: center;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 0.5rem;
         }
 
-        .step-number {
-            background-color: var(--primary-color);
-            color: white;
-            border-radius: 50%;
-            width: 28px;
-            height: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.9rem;
-            margin-right: 0.6rem;
+        /* 憑證步驟樣式 */
+        .token-step {
+            background-color: #f8fafc;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #e2e8f0;
         }
+        .important { color: #e74c3c; font-weight: bold; }
 
         .url-box {
             background-color: #f1f5f9;
@@ -121,6 +115,7 @@
             border-radius: 3px;
         }
 
+        /* GPIO 表格樣式 */
         .gpio-container { overflow-x: auto; margin: 1.5rem 0; }
         .gpio-table { width: 100%; min-width: 600px; border-collapse: collapse; font-size: 0.85rem; text-align: center; }
         .gpio-table th { background-color: var(--primary-color); color: white; padding: 0.5rem; }
@@ -140,9 +135,8 @@
             font-size: 0.9rem;
         }
         code { font-family: Consolas, Monaco, monospace; }
-        .code-inline { background-color: #e2e8f0; color: #1e293b; padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.9rem; font-family: monospace; }
         
-        footer { text-align: center; padding: 2rem 1rem; background-color: var(--primary-color); color: white; margin-top: 4rem; font-size: 0.9rem; }
+        footer { text-align: center; padding: 3rem 1rem; background-color: #f8fafc; color: #64748b; font-size: 0.9rem; border-top: 1px solid #eee; }
     </style>
 </head>
 <body>
@@ -155,7 +149,7 @@
     <div class="container">
         
         <div class="nav-toggle-box">
-            <a href="plan-b.html" class="btn-toggle-b">👉 切換至【方案 B：GCP API 本地中繼與直連 LINE Bot】</a>
+            <a href="plan-b.html" class="btn-toggle-b">👉 切換至【方案 B：GCP API 本地中繼與直連方案】</a>
         </div>
 
         <div class="warning-card">
@@ -163,28 +157,41 @@
         </div>
 
         <div class="intro-card">
-            <strong>💡 架構導讀（方案 A）：</strong>
-            本教學採用「方案 A」。由樹莓派定時讀取 DHT11 後，轉化為 HTTP POST 請求並帶入指定的試算表 ID 發送給 <strong>Google Apps Script (GAS)</strong>。GAS 負責將數據寫入試算表，並由 **GAS 後台直接呼叫 LINE API** 發送通知，實現雲端中轉的整合架構。
+            <strong>💡 架構導讀：</strong>
+            本方案由樹莓派定時讀取 DHT11 後，發送加密 JSON 到 <strong>Google Apps Script (GAS)</strong>。GAS 負責將數據寫入試算表，並由 <strong>GAS 後台直接呼叫 LINE API</strong> 發送通知，實現不佔用樹莓派效能的雲端中轉架構。
         </div>
 
         <div class="step-block">
-            <div class="step-title"><div class="step-number">1</div>如何檢索並提取 Google 試算表 ID？</div>
-            <p>打開你的 Google 雲端試算表，觀察瀏覽器上方網址列，結構如下圖。請<strong>僅複製</strong>兩條斜線中間的那一長串英數隨機亂碼：</p>
+            <div class="step-title">第一步：取得 LINE 通訊憑證 (金鑰)</div>
+            <p>在使用程式碼前，您必須先從 LINE Developers 取得發送權限：</p>
+            <div class="token-step">
+                <strong>1. 取得 Your user ID：</strong><br>
+                登入 <a href="https://developers.line.biz/console/" target="_blank">LINE Developers</a> ➡️ 點進您的 Channel ➡️ <strong>Basic settings</strong> 頁籤 ➡️ 滑至最底部複製 <strong>Your user ID</strong> (U開頭的超長亂碼)。
+            </div>
+            <div class="token-step">
+                <strong>2. 取得 Access Token：</strong><br>
+                切換至 <strong>Messaging API</strong> 頁籤 ➡️ 滑至最底部 ➡️ 在 <strong>Channel access token</strong> 欄位點擊「Issue」並複製該金鑰。
+            </div>
+            <p><span class="important">⚠️ 關鍵動作：</span>請務必用手機掃描 Messaging API 頁面之 QR Code 將您的機器人**加入好友**，否則系統將無法成功推送訊息。</p>
+        </div>
+
+        <div class="step-block">
+            <div class="step-title">第二步：如何檢索並提取 Google 試算表 ID？</div>
+            <p>打開您的雲端試算表，觀察瀏覽器上方網址列，結構如下圖。請<strong>僅複製</strong>兩條斜線中間的那一長串亂碼：</p>
             <div class="url-box">
                 https://docs.google.com/spreadsheets/d/<span class="url-highlight">【 只要複製這整串隨機亂碼，這就是試算表 ID 】</span>/edit#gid=0
             </div>
-            <p>💡 <em>註：這串 ID 稍後必須貼進 Python 程式碼中的 <code class="code-inline">SPREADSHEET_ID</code> 欄位。</em></p>
+            <p>💡 <em>註：這串 ID 稍後必須貼進 Python 與 GAS 程式碼中的欄位。</em></p>
         </div>
 
         <div class="step-block">
-            <div class="step-title"><div class="step-number">2</div>硬體腳位與型號提醒（三針腳 vs 四針腳）</div>
+            <div class="step-title">第三步：硬體腳位與型號提醒</div>
             <p><strong style="color: #e74c3c;">⚠️ 型號與電阻關鍵確認：</strong></p>
             <ul>
-                <li><strong>3 腳位模組（常見藍色小板）：</strong> 通常已內建上拉電阻，因此通常不需外接電阻。接線時只需將模組的 VCC、GND、DATA 依序連接樹莓派即可。</li>
-                <li><strong>4 腳位元件（裸件）：</strong> 內部沒有整合電阻，必須在 VCC 與 DATA 之間<strong>手動外接一個 4.7kΩ ~ 10kΩ 的上拉電阻</strong>，否則樹莓派可能因訊號浮動而無法正確讀取到溫濕度數據（第 3 腳通常為空腳不接）。</li>
+                <li><strong>3 腳位模組（常見藍色小板）：</strong> 通常已內建上拉電阻，不需外接，直接連接即可。</li>
+                <li><strong>4 腳位元件（裸件）：</strong> 內部無整合電阻，必須在 VCC 與 DATA 之間<strong>手動並聯一個 4.7kΩ ~ 10kΩ 的上拉電阻</strong>。</li>
             </ul>
 
-            <p style="margin-top: 1rem;"><strong>Raspberry Pi 40-pin 實體排針接法對照表（樹莓派 3）：</strong></p>
             <div class="gpio-container">
                 <table class="gpio-table">
                     <thead>
@@ -215,7 +222,7 @@
                             <td class="pin-gnd">接 DHT11 的 GND（標示 - 或 GND） ── [Ground 地線 / Pin 6]</td>
                         </tr>
                         <tr class="pin-gpio4">
-                            <td>接 DHT11 的 DATA（標示 S、OUT 或 DAT） ── [GPIO 4 / Pin 7]</td>
+                            <td>接 DHT11 的 DATA（標示 S 或 DAT） ── [GPIO 4 / Pin 7]</td>
                             <td class="pin-num">7</td>
                             <td class="pin-num">8</td>
                             <td>GPIO 14 (TXD)</td>
@@ -232,35 +239,26 @@
         </div>
 
         <div class="step-block">
-            <div class="step-title"><div class="step-number">3</div>雲端後台：Google Apps Script 接收與 LINE 發送邏輯設定</div>
-            <p>請在 Google 試算表的「擴充功能」&gt;「Apps Script」中貼上以下指令碼。此處已包含將數據寫入試算表，以及**同步發送動作至 LINE 官方 API** 的完整執行邏輯：</p>
+            <div class="step-title">第四步：雲端後台 Google Apps Script 指令碼</div>
+            <p>請將以下代碼貼入試算表的 Apps Script 編輯器，並代換您的 LINE 憑證：</p>
             <pre><code>function doPost(e) {
-  // 1. 解析來自樹莓派的 JSON 數據
   var params = JSON.parse(e.postData.contents);
   var targetId = params.spreadsheet_id; 
   var temp = params.temperature;
   var humi = params.humidity;
   
-  // 2. 執行動作：開啟指定試算表並寫入歷史紀錄
+  // 1. 寫入歷史紀錄
   var ss = SpreadsheetApp.openById(targetId);
   var sheet = ss.getSheets()[0];
   var now = Utilities.formatDate(new Date(), "Asia/Taipei", "yyyy-MM-dd HH:mm:ss");
   sheet.appendRow([now, temp, humi]);
   
-  // 3. LINE Bot 發送邏輯：設定憑證與傳輸內容
-  var LINE_ACCESS_TOKEN = "請在此處貼上你的_LINE_Channel_Access_Token";
-  var TARGET_USER_ID = "請在此處貼上你的_LINE_Your_user_ID";
+  // 2. LINE Bot 設定 (在此代換第一步取得的憑證)
+  var LINE_ACCESS_TOKEN = "請貼上您的_CHANNEL_ACCESS_TOKEN";
+  var TARGET_USER_ID = "請貼上您的_YOUR_USER_ID";
   
   var line_api_url = "https://api.line.me/v2/bot/message/push";
   var message_text = "\n🌡️ 樹莓派雲端 GAS 回報\n-------------------\n⏰ 時間：" + now + "\n°C 溫度：" + temp + " °C\n💧 濕度：" + humi + " %";
-  
-  var payload = {
-    "to": TARGET_USER_ID,
-    "messages": [{
-      "type": "text",
-      "text": message_text
-    }]
-  };
   
   var options = {
     "method": "post",
@@ -268,32 +266,33 @@
       "Content-Type": "application/json",
       "Authorization": "Bearer " + LINE_ACCESS_TOKEN
     },
-    "payload": JSON.stringify(payload),
+    "payload": JSON.stringify({
+      "to": TARGET_USER_ID,
+      "messages": [{"type": "text", "text": message_text}]
+    }),
     "muteHttpExceptions": true
   };
   
-  // 4. 執行發送動作至 LINE 伺服器
   UrlFetchApp.fetch(line_api_url, options);
-  
   return ContentService.createTextOutput("Success: Logged to Sheet and Sent to LINE.");
 }</code></pre>
         </div>
 
         <div class="step-block">
-            <div class="step-title"><div class="step-number">4</div>樹莓派用戶端：Python 傳送程式碼</div>
+            <div class="step-title">第五步：樹莓派用戶端 Python 傳送程式碼</div>
             <pre><code>import time
 import requests
 import board
 import adafruit_dht
 
-# 📢 貼上你的相關參數
+# 📢 填入您的參數
 GAS_WEBAPP_URL = "https://script.google.com/macros/s/XXXXX/exec"
-SPREADSHEET_ID = "貼上你檢索到的Google試算表ID亂碼"
+SPREADSHEET_ID = "您的Google試算表ID"
 
-# 連接至實體第 7 針腳 (GPIO 4)
+# 連接實體第 7 針腳 (GPIO 4)
 dhtDevice = adafruit_dht.DHT11(board.D4)
 
-print("樹莓派 方案 A 系統啟動...")
+print("樹莓派 方案 A 系統啟動，每 10 分鐘自動採樣一次...")
 
 try:
     while True:
@@ -307,11 +306,12 @@ try:
                     "temperature": round(temperature, 1), 
                     "humidity": round(humidity, 1)
                 }
-                res = requests.post(GAS_WEBAPP_URL, json=payload, timeout=10)
+                res = requests.post(GAS_WEBAPP_URL, json=payload, timeout=15)
                 print(f"【方案 A】上傳成功！回應: {res.text}")
                 
-            time.sleep(600)  # 每 10 分鐘自動傳送一次
+            time.sleep(600) 
         except RuntimeError as error:
+            # 物理通訊偶發錯誤，等待 2 秒重試
             time.sleep(2.0)
             continue
         except Exception as error:
