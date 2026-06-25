@@ -9,7 +9,6 @@
             --primary-color: #2c3e50;
             --blue-accent: #2980b9;
             --danger-color: #c0392b;
-            --line-color: #06C755;
             --bg-color: #f4f6f9;
             --card-bg: #ffffff;
             --code-bg: #1e293b;
@@ -54,19 +53,6 @@
             transition: transform 0.2s, background-color 0.2s;
         }
         .btn-toggle-b:hover { background-color: #d35400; transform: translateY(-2px); }
-        
-        .btn-line {
-            background-color: var(--line-color);
-            color: white;
-            padding: 12px 24px;
-            text-decoration: none;
-            border-radius: 25px;
-            font-weight: bold;
-            display: inline-block;
-            box-shadow: 0 4px 15px rgba(6, 199, 85, 0.3);
-            transition: transform 0.2s, background-color 0.2s;
-        }
-        .btn-line:hover { background-color: #05b04b; transform: translateY(-2px); }
 
         .warning-card {
             background-color: #fadbd8;
@@ -157,7 +143,6 @@
         .code-inline { background-color: #e2e8f0; color: #1e293b; padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.9rem; font-family: monospace; }
         
         footer { text-align: center; padding: 2rem 1rem; background-color: var(--primary-color); color: white; margin-top: 4rem; font-size: 0.9rem; }
-        footer p { margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -171,7 +156,6 @@
         
         <div class="nav-toggle-box">
             <a href="plan-b.html" class="btn-toggle-b">👉 切換至【方案 B：GCP API 本地中繼與直連 LINE Bot】</a>
-            <a href="https://line.me/R/ti/p/@你的LINEBotID" target="_blank" class="btn-line">💬 測試與檢視我的 LINE Bot 官方帳號</a>
         </div>
 
         <div class="warning-card">
@@ -180,7 +164,7 @@
 
         <div class="intro-card">
             <strong>💡 架構導讀（方案 A）：</strong>
-            本教學採用「方案 A」。由樹莓派定時讀取 DHT11 後，轉化為 HTTP POST 請求並帶入指定的試算表 ID 發送給 <strong>Google Apps Script (GAS)</strong>。GAS 負責開啟對應試算表並寫入，此方案的樹莓派程式碼極為簡潔。
+            本教學採用「方案 A」。由樹莓派定時讀取 DHT11 後，轉化為 HTTP POST 請求並帶入指定的試算表 ID 發送給 <strong>Google Apps Script (GAS)</strong>。GAS 負責將數據寫入試算表，並由 **GAS 後台直接呼叫 LINE API** 發送通知，實現雲端中轉的整合架構。
         </div>
 
         <div class="step-block">
@@ -196,11 +180,11 @@
             <div class="step-title"><div class="step-number">2</div>硬體腳位與型號提醒（三針腳 vs 四針腳）</div>
             <p><strong style="color: #e74c3c;">⚠️ 型號與電阻關鍵確認：</strong></p>
             <ul>
-                <li><strong>3 支腳位模組（市售常見，如 Keyes 藍色小板）：</strong> 此型號<strong>已在電路板上內建 4.7kΩ 或 10kΩ 上拉電阻</strong>。不需外接電阻，直接用杜邦線連接樹莓派即可。</li>
-                <li><strong>4 支腳位元件（純藍色塑料外殼裸件）：</strong> 第 3 腳為空腳。此型號<strong>內部沒有電阻</strong>，接線時必須在 VCC（第1腳）與 DATA（第2腳）之間<strong>手動並聯一個 4.7kΩ ~ 10kΩ 的電阻</strong>作為上拉電阻，否則樹莓派會因訊號浮動而讀取不到數據（Unknown platform 錯誤）。</li>
+                <li><strong>3 腳位模組（常見藍色小板）：</strong> 通常已內建上拉電阻，因此通常不需外接電阻。接線時只需將模組的 VCC、GND、DATA 依序連接樹莓派即可。</li>
+                <li><strong>4 腳位元件（裸件）：</strong> 內部沒有整合電阻，必須在 VCC 與 DATA 之間<strong>手動外接一個 4.7kΩ ~ 10kΩ 的上拉電阻</strong>，否則樹莓派可能因訊號浮動而無法正確讀取到溫濕度數據（第 3 腳通常為空腳不接）。</li>
             </ul>
 
-            <p style="margin-top: 1rem;"><strong>實體 40-Pin 排針接線對照表（樹莓派 3）：</strong></p>
+            <p style="margin-top: 1rem;"><strong>Raspberry Pi 40-pin 實體排針接法對照表（樹莓派 3）：</strong></p>
             <div class="gpio-container">
                 <table class="gpio-table">
                     <thead>
@@ -213,7 +197,7 @@
                     </thead>
                     <tbody>
                         <tr class="pin-vcc">
-                            <td>接 DHT11 的 VCC（標示 + 或 VCC） ── [3.3V 電源]</td>
+                            <td>接 DHT11 的 VCC（標示 + 或 VCC） ── [3.3V 電源 / Pin 1]</td>
                             <td class="pin-num">1</td>
                             <td class="pin-num">2</td>
                             <td>5V 電源</td>
@@ -228,10 +212,10 @@
                             <td>GPIO 3 (SCL)</td>
                             <td class="pin-num">5</td>
                             <td class="pin-num">6</td>
-                            <td class="pin-gnd">接 DHT11 的 GND（標示 - 或 GND） ── [Ground 地線]</td>
+                            <td class="pin-gnd">接 DHT11 的 GND（標示 - 或 GND） ── [Ground 地線 / Pin 6]</td>
                         </tr>
                         <tr class="pin-gpio4">
-                            <td>接 DHT11 的 DATA（標示 S、OUT 或 DAT） ── [GPIO 4]</td>
+                            <td>接 DHT11 的 DATA（標示 S、OUT 或 DAT） ── [GPIO 4 / Pin 7]</td>
                             <td class="pin-num">7</td>
                             <td class="pin-num">8</td>
                             <td>GPIO 14 (TXD)</td>
@@ -248,20 +232,50 @@
         </div>
 
         <div class="step-block">
-            <div class="step-title"><div class="step-number">3</div>雲端後台：Google Apps Script 接收指令碼</div>
+            <div class="step-title"><div class="step-number">3</div>雲端後台：Google Apps Script 接收與 LINE 發送邏輯設定</div>
+            <p>請在 Google 試算表的「擴充功能」&gt;「Apps Script」中貼上以下指令碼。此處已包含將數據寫入試算表，以及**同步發送動作至 LINE 官方 API** 的完整執行邏輯：</p>
             <pre><code>function doPost(e) {
+  // 1. 解析來自樹莓派的 JSON 數據
   var params = JSON.parse(e.postData.contents);
-  var targetId = params.spreadsheet_id; // 接收來自樹莓派的試算表ID
+  var targetId = params.spreadsheet_id; 
   var temp = params.temperature;
   var humi = params.humidity;
   
-  // 根據傳入的 ID 開啟指定的試算表
+  // 2. 執行動作：開啟指定試算表並寫入歷史紀錄
   var ss = SpreadsheetApp.openById(targetId);
   var sheet = ss.getSheets()[0];
   var now = Utilities.formatDate(new Date(), "Asia/Taipei", "yyyy-MM-dd HH:mm:ss");
-  
   sheet.appendRow([now, temp, humi]);
-  return ContentService.createTextOutput("Success: Logged to " + targetId);
+  
+  // 3. LINE Bot 發送邏輯：設定憑證與傳輸內容
+  var LINE_ACCESS_TOKEN = "請在此處貼上你的_LINE_Channel_Access_Token";
+  var TARGET_USER_ID = "請在此處貼上你的_LINE_Your_user_ID";
+  
+  var line_api_url = "https://api.line.me/v2/bot/message/push";
+  var message_text = "\n🌡️ 樹莓派雲端 GAS 回報\n-------------------\n⏰ 時間：" + now + "\n°C 溫度：" + temp + " °C\n💧 濕度：" + humi + " %";
+  
+  var payload = {
+    "to": TARGET_USER_ID,
+    "messages": [{
+      "type": "text",
+      "text": message_text
+    }]
+  };
+  
+  var options = {
+    "method": "post",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + LINE_ACCESS_TOKEN
+    },
+    "payload": JSON.stringify(payload),
+    "muteHttpExceptions": true
+  };
+  
+  // 4. 執行發送動作至 LINE 伺服器
+  UrlFetchApp.fetch(line_api_url, options);
+  
+  return ContentService.createTextOutput("Success: Logged to Sheet and Sent to LINE.");
 }</code></pre>
         </div>
 
@@ -311,7 +325,6 @@ except KeyboardInterrupt:
 
     <footer>
         <p>資通訊物聯網開發教材 ✕ 方案 A GAS 快速部署 ✕ 2026</p>
-        <p><a href="https://line.me/R/ti/p/@你的LINEBotID" target="_blank" style="color:#06C755; text-decoration:none; font-weight:bold;">🟢 點擊此處加入專案 LINE 官方帳號 Bot 🔔</a></p>
     </footer>
 
 </body>
